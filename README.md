@@ -1,6 +1,7 @@
-Personal Finance Tracker and Budgeting Tool using Plaid API & other misc. apis
+# Personal Finance Tracker and Budgeting Tool using Plaid API
 
-Description: Users can track their expenses, set up budget goals, and view detailed reports on their spending patterns.
+## Description: Users can track their expenses, set up budget goals, and view detailed reports on their spending patterns.
+
 Features:
 - Connects with a banking API or uses manual input for transactions.
 - Summarize Transactions - Overview Page
