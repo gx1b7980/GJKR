@@ -3,6 +3,6 @@ CREATE DATABASE projectdemo;
 CREATE TABLE test (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
-	balance INT,
+	balance INT
 );
 INSERT INTO test (name, balance) VALUES ('alex', 100);
