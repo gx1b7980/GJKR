@@ -149,6 +149,11 @@ app.get("/api/identity", (req, res) => {
     });
 });
 
+app.post('/api/transactions/create', (req, res) => {
+  const { date, amount, category } = req.body;
+  //TO-DO: store data in Postgres
+});
+
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}`);
 });
