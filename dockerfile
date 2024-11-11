@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm install
 
 COPY . .
-
+ 
 ENV PGUSER="postgres" \
     PGPASSWORD="PASSWPRD" \
     PGHOST="localhost" \
