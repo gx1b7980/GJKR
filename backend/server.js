@@ -8,7 +8,7 @@ const hostname = "localhost";
 
 // Create API keys from Plaid and add them to env.json as client_IDKey and secretKey
 // Load API keys from the env.json file
-let apiFile = require("../env.json");
+let apiFile = require("../server/env.json");
 let client_IDKey = apiFile["client_IDKey"];
 let secretKey = apiFile["secretKey"];
 
