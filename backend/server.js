@@ -2,15 +2,31 @@ const express = require("express");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const session = require("express-session");
 const app = express();
+const pg = require("pg");
+const path = require('path');
 
 const port = 3000;
 const hostname = "localhost";
 
 // Create API keys from Plaid and add them to env.json as client_IDKey and secretKey
 // Load API keys from the env.json file
-let apiFile = require("../server/env.json");
-let client_IDKey = apiFile["client_IDKey"];
-let secretKey = apiFile["secretKey"];
+const env = require("../server/env.json");
+let client_IDKey = env["client_IDKey"];
+let secretKey = env["secretKey"];
+
+// Database connection setup using the env.json file
+// Make sure to include postgres information in env.json
+const pool = new pg.Pool({
+  user: env.user,
+  host: env.host,
+  database: env.database,
+  password: env.password,
+  port: env.port,
+});
+
+pool.connect()
+  .then(() => console.log(`Connected to database ${env.database}`))
+  .catch((err) => console.error("Error connecting to database:", err));
 
 app.use(express.static("public"));
 app.use(express.json());
@@ -36,8 +52,10 @@ const plaidConfig = new Configuration({
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
+app.use(express.static(path.join(__dirname, '../frontend')));
+// Route to serve index.html
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
 // Route to create a link token
@@ -149,9 +167,33 @@ app.get("/api/identity", (req, res) => {
     });
 });
 
-app.post('/api/transactions/create', (req, res) => {
+// Create a new transaction
+app.post("/api/transactions/create", (req, res) => {
   const { date, amount, category } = req.body;
-  //TO-DO: store data in Postgres
+
+  pool.query(
+    "INSERT INTO transactions (date, amount, category) VALUES ($1, $2, $3) RETURNING *",
+    [date, amount, category]
+  )
+    .then((result) => {
+      res.status(201).json(result.rows[0]);
+    })
+    .catch((error) => {
+      console.error("Error inserting transaction:", error);
+      res.status(500).send("Error creating transaction");
+    });
+});
+
+// Fetch all transactions
+app.get("/api/transactions", (req, res) => {
+  pool.query("SELECT * FROM transactions ORDER BY date DESC")
+    .then((result) => {
+      res.json(result.rows);
+    })
+    .catch((error) => {
+      console.error("Error fetching transactions:", error);
+      res.status(500).send("Error fetching transactions");
+    });
 });
 
 app.listen(port, hostname, () => {
