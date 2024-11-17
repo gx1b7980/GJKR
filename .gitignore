@@ -2,3 +2,4 @@
 server/env.json
 /server/node_modules
 server/env.json
+/backend/node_modules
