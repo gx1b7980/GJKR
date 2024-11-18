@@ -6,7 +6,7 @@
   <!-- Links to other pages -->
   <nav>
     <a href="index.html" style="margin-right: 20px;" >Home</a>
-    <a href="transactions.html" style="margin-right: 20px;">Transaction Create</a>
+    <button id="open-modal" style="margin-right: 20px;">Transaction Create</button>
   </nav>
 
   <title>Transaction Overview</title>
@@ -14,7 +14,39 @@
 </head>
 <body>
   <h1>Transaction Overview</h1>
-  
+
+  <!-- modal -->
+  <div id="transaction-modal" class="modal">
+    <div class="modal-content">
+      <span id="close-modal" class="close">&times;</span>
+      <h2>Add Transactions</h2>
+      <form id="transaction-form">
+        <div>
+          <label for="date">Date:</label>
+          <input type="date" id="date" name="date" required>
+        </div>
+
+        <div>
+          <label for="amount">Amount:</label>
+          <input type="number" id="amount" name="amount" required>
+        </div>
+
+        <div>
+          <label for="category">Category:</label>
+          <select id="category" name="category" required>
+            <option value="groceries">Groceries</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="dining">Dining</option>
+            <option value="bills">Bills</option>
+            <option value="transportation">Transportation</option>
+            <option value="personal">Personal</option>
+          </select>
+        </div>
+        <button type="submit">Create Transaction</button>
+      </form>
+    </div>
+  </div>
+
   <div id="transaction-categories">
     <h2>Transactions by Category</h2>
     <div id="category-groceries" class="category-section">
