@@ -35,3 +35,9 @@ INSERT INTO transactions (date, amount, category) VALUES
 ('2024-11-01 10:00:00', 50.00, 'groceries'),
 ('2024-11-02 12:30:00', 20.00, 'entertainment'),
 ('2024-11-03 14:00:00', 30.00, 'dining');
+
+CREATE TABLE users(
+	id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL
+);
