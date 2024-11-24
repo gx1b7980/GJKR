@@ -55,3 +55,28 @@ body {
     text-decoration: none;
     cursor: pointer;
   }
+
+  .category-section {
+    margin-bottom: 20px;
+  }
+  
+  .category-section h3 {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .detailed-category h4 {
+    margin-left: 20px;
+    color: #666;
+  }
+  
+  .transaction-list {
+    list-style: none;
+    padding: 0;
+    margin-left: 20px;
+  }
+  .transaction-list li {
+    padding: 5px 0;
+  }
+  

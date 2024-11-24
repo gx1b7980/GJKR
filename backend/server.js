@@ -120,9 +120,9 @@ app.post("/api/transactions/sync", (req, res) => {
 
   plaidClient.transactionsGet({
     access_token,
-    // Sample start and end date
     start_date: '2023-01-01',
-    end_date: '2023-12-31'
+    end_date: '2023-12-31',
+    options: { include_personal_finance_category: true },
   })
     .then(response => {
       res.json({ transactions: response.data.transactions });
@@ -169,11 +169,11 @@ app.get("/api/identity", (req, res) => {
 
 // Create a new transaction
 app.post("/api/transactions/create", (req, res) => {
-  const { date, amount, category } = req.body;
+  const { date, amount, category, primary_category, detailed_category } = req.body;
 
   pool.query(
-    "INSERT INTO transactions (date, amount, category) VALUES ($1, $2, $3) RETURNING *",
-    [date, amount, category]
+    "INSERT INTO transactions (date, amount, category, primary_category, detailed_category) VALUES ($1, $2, $3) RETURNING *",
+    [date, amount, category, primary_category, detailed_category]
   )
     .then((result) => {
       res.status(201).json(result.rows[0]);
