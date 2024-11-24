@@ -4,12 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <script src="auth.js"></script>
+    <!-- Links to other pages -->
+    <nav>
+      <a href="overview.html" style="margin-right: 20px;">Transaction Overview</a>
+      <span id="auth-buttons">
+        <button onclick="showModal('login')">Login</button>
+        <button onclick="showModal('signup')">Sign Up</button>
+      </span>
+    </nav>
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <!-- Links to other pages -->
-  <nav>
-    <a href="overview.html" style="margin-right: 20px;">Transaction Overview</a>
-  </nav>
+  <div id="auth-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <h2 id="modal-title"></h2>
+        <div id="error-message" class="error-message"></div>
+        <form id="auth-form" onsubmit="handleAuth(event)">
+            <div>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div>
+                <button type="submit" id="submit-button">
+                    Submit
+                </button>
+            </div>
+        </form>
+    </div>
+  </div>
 
   <h1>Connect to Plaid's sandbox data</h1>
 
