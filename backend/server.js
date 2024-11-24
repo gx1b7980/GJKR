@@ -52,6 +52,7 @@ const plaidConfig = new Configuration({
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 // Route to serve index.html
 app.get("/", (req, res) => {
@@ -194,6 +195,108 @@ app.get("/api/transactions", (req, res) => {
       console.error("Error fetching transactions:", error);
       res.status(500).send("Error fetching transactions");
     });
+});
+
+app.post("/api/signup", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Check if username already exists
+    const userExists = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Insert new user
+    const result = await pool.query(
+      "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username",
+      [username, hashedPassword]
+    );
+
+    // Set session
+    req.session.userId = result.rows[0].id;
+    req.session.username = result.rows[0].username;
+
+    res.status(201).json({
+      message: "User created successfully",
+      user: { id: result.rows[0].id, username: result.rows[0].username }
+    });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Error creating user" });
+  }
+});
+
+// Login route
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Find user
+    const result = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    const user = result.rows[0];
+
+    // Check password
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    // Set session
+    req.session.userId = user.id;
+    req.session.username = user.username;
+
+    res.json({
+      message: "Login successful",
+      user: { id: user.id, username: user.username }
+    });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({ message: "Error logging in" });
+  }
+});
+
+// Logout route
+app.post("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Error logging out" });
+    }
+    res.json({ message: "Logged out successfully" });
+  });
+});
+
+// Get current user route
+app.get("/api/user", (req, res) => {
+  if (req.session.userId) {
+    res.json({
+      isLoggedIn: true,
+      user: {
+        id: req.session.userId,
+        username: req.session.username
+      }
+    });
+  } else {
+    res.json({
+      isLoggedIn: false
+    });
+  }
 });
 
 app.listen(port, hostname, () => {

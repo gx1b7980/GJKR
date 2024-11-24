@@ -80,3 +80,9 @@ body {
     padding: 5px 0;
   }
   
+  .close-button {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    cursor: pointer;
+}
