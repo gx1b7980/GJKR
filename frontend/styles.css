@@ -85,4 +85,29 @@ body {
     right: 20px;
     top: 20px;
     cursor: pointer;
-}
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+  }
+  
+  .budget-info {
+    color: #666;
+    font-size: 0.9em;
+  }
+  
+  .remove-target {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.8em;
+    border-radius: 3px;
+  }
+  
+  .remove-target:hover {
+    background-color: #750808;
+  }
+  
