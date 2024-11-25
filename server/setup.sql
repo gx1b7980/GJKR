@@ -40,8 +40,10 @@ INSERT INTO transactions (date, amount, category, primary_category, detailed_cat
 ('2024-11-02 12:30:00', 20.00, 'entertainment', 'Leisure', 'entertainment'),
 ('2024-11-03 14:00:00', 30.00, 'dining', 'Food', 'dining');
 
-CREATE TABLE users(
-	id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL
+-- Financial Targets Table
+CREATE TABLE financial_targets (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(50) NOT NULL UNIQUE,
+    target_amount DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (category) REFERENCES categories (name)
 );
