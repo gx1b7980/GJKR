@@ -16,7 +16,7 @@ let secretKey = env["secretKey"];
 
 // Database connection setup using the env.json file
 // Make sure to include postgres information in env.json
-const pool = new pg.Pool({
+const db = new pg.Pool({
   user: env.user,
   host: env.host,
   database: env.database,
@@ -24,7 +24,7 @@ const pool = new pg.Pool({
   port: env.port,
 });
 
-pool.connect()
+db.connect()
   .then(() => console.log(`Connected to database ${env.database}`))
   .catch((err) => console.error("Error connecting to database:", err));
 
@@ -63,7 +63,7 @@ app.get("/", (req, res) => {
 app.post("/api/create_link_token", (req, res) => {
   plaidClient.linkTokenCreate({
     user: {
-      client_user_id: "unique_user_id",
+      client_user_id: "user_transactions_dynamic",
     },
     client_name: "Your App Name",
     products: ["transactions"],
@@ -121,8 +121,8 @@ app.post("/api/transactions/sync", (req, res) => {
 
   plaidClient.transactionsGet({
     access_token,
-    start_date: '2023-01-01',
-    end_date: '2023-12-31',
+    start_date: '2024-01-01',
+    end_date: '2024-12-31',
     options: { include_personal_finance_category: true },
   })
     .then(response => {
@@ -169,25 +169,34 @@ app.get("/api/identity", (req, res) => {
 });
 
 // Create a new transaction
-app.post("/api/transactions/create", (req, res) => {
-  const { date, amount, category, primary_category, detailed_category } = req.body;
+app.post('/api/transactions/create', async (req, res) => {
+  try {
+    const { date, amount, category } = req.body;
 
-  pool.query(
-    "INSERT INTO transactions (date, amount, category, primary_category, detailed_category) VALUES ($1, $2, $3) RETURNING *",
-    [date, amount, category, primary_category, detailed_category]
-  )
-    .then((result) => {
-      res.status(201).json(result.rows[0]);
-    })
-    .catch((error) => {
-      console.error("Error inserting transaction:", error);
-      res.status(500).send("Error creating transaction");
-    });
+    const categoryResult = await db.query(
+      'SELECT primary_category, detailed_category FROM categories WHERE name = $1',
+      [category]
+    );
+    if (categoryResult.rowCount === 0) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    const { primary_category, detailed_category } = categoryResult.rows[0];
+
+    await db.query(
+      'INSERT INTO transactions (date, amount, category, primary_category, detailed_category) VALUES ($1, $2, $3, $4, $5)',
+      [date, amount, category, primary_category, detailed_category]
+    );
+
+    res.status(201).json({ message: 'Transaction created successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to create transaction' });
+  }
 });
 
 // Fetch all transactions
 app.get("/api/transactions", (req, res) => {
-  pool.query("SELECT * FROM transactions ORDER BY date DESC")
+  db.query("SELECT * FROM transactions ORDER BY date DESC")
     .then((result) => {
       res.json(result.rows);
     })
@@ -202,7 +211,7 @@ app.post("/api/signup", async (req, res) => {
 
   try {
     // Check if username already exists
-    const userExists = await pool.query(
+    const userExists = await db.query(
       "SELECT * FROM users WHERE username = $1",
       [username]
     );
@@ -215,7 +224,7 @@ app.post("/api/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Insert new user
-    const result = await pool.query(
+    const result = await db.query(
       "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username",
       [username, hashedPassword]
     );
@@ -240,7 +249,7 @@ app.post("/api/login", async (req, res) => {
 
   try {
     // Find user
-    const result = await pool.query(
+    const result = await db.query(
       "SELECT * FROM users WHERE username = $1",
       [username]
     );
@@ -297,6 +306,137 @@ app.get("/api/user", (req, res) => {
       isLoggedIn: false
     });
   }
+});
+
+app.get("/api/transactions", (req, res) => {
+  db.query("SELECT * FROM transactions ORDER BY date DESC")
+    .then((transactionsResult) => {
+      const transactions = transactionsResult.rows;
+
+      return db.query("SELECT category, target_amount FROM financial_targets")
+        .then((targetsResult) => {
+          const targets = targetsResult.rows;
+
+          // Calculate the total spending for each category
+          const categoryTotals = {};
+          transactions.forEach((transaction) => {
+            const category = transaction.category;
+            if (!categoryTotals[category]) {
+              categoryTotals[category] = 0;
+            }
+            categoryTotals[category] += parseFloat(transaction.amount);
+          });
+
+          // Find out which categories go over their budget targets
+          const categoryStatus = targets.map((target) => {
+            const totalSpent = categoryTotals[target.category] || 0;
+            return {
+              category: target.category,
+              totalSpent: totalSpent,
+              targetAmount: parseFloat(target.target_amount),
+              overLimit: totalSpent > parseFloat(target.target_amount),
+            };
+          });
+
+          res.json({ transactions, categoryStatus });
+        });
+    })
+    .catch((error) => {
+      console.error("Error fetching transactions or financial targets:", error);
+      res.status(500).send("Internal Server Error");
+    });
+});
+
+// Fetch combined transactions (Plaid + Manual)
+app.get("/api/transactions/all", async (req, res) => {
+  try {
+    
+    // Fetch Plaid transactions
+    const access_token = req.session.access_token;
+    let plaidTransactions = [];
+    if (access_token) {
+      const plaidResponse = await plaidClient.transactionsGet({
+        access_token,
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+      });
+      plaidTransactions = plaidResponse.data.transactions;
+    }
+
+    // Fetch manual transactions from the database
+    const manualTransactionsResult = await db.query("SELECT * FROM transactions ORDER BY date DESC");
+    const manualTransactions = manualTransactionsResult.rows;
+
+    const combinedTransactions = [...plaidTransactions, ...manualTransactions];
+    res.json({ transactions: combinedTransactions });
+  } catch (error) {
+    console.error("Error fetching combined transactions:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to get all financial targets
+app.get('/api/financial-targets', (req, res) => {
+  db.query('SELECT category, target_amount FROM financial_targets')
+    .then(result => {
+      const financialTargets = result.rows.reduce((acc, row) => {
+        acc[row.category] = row.target_amount;
+        return acc;
+      }, {});
+      res.json(financialTargets);
+    })
+    .catch(error => {
+      console.error("Error fetching financial targets:", error);
+      res.status(500).json({ error: "Failed to fetch financial targets" });
+    });
+});
+
+// Route to set financial targets
+app.post('/api/financial-targets/set', (req, res) => {
+  const { category, targetAmount } = req.body;
+  const query = 'INSERT INTO financial_targets (category, target_amount) VALUES ($1, $2) ON CONFLICT (category) DO UPDATE SET target_amount = $2';
+  
+  db.query(query, [category, targetAmount], (err, result) => {
+    if (err) {
+      console.error('Error setting financial target:', err);
+      return res.status(500).send('Internal Server Error');
+    }
+    res.status(200).send('Target set successfully');
+  });
+});
+
+// Route to get the financial target for a specific category
+app.get('/api/financial-targets/:category', (req, res) => {
+  const category = req.params.category;
+  const query = 'SELECT target_amount FROM financial_targets WHERE category = $1';
+
+  db.query(query, [category], (err, result) => {
+    if (err || result.rows.length === 0) {
+      return res.status(404).send('Target not found');
+    }
+    res.status(200).json(result.rows[0]);
+  });
+});
+
+
+// Route to remove a financial target
+app.post('/api/financial-targets/remove', (req, res) => {
+  const { category } = req.body;
+
+  if (!category) {
+    return res.status(400).send('Category is required');
+  }
+
+  const query = 'DELETE FROM financial_targets WHERE category = $1';
+
+  db.query(query, [category], (err, result) => {
+    if (err) {
+      console.error('Error removing financial target:', err);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    res.status(200).send('Target removed successfully');
+  });
 });
 
 app.listen(port, hostname, () => {
