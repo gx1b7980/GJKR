@@ -47,6 +47,27 @@
     </div>
   </div>
 
+  <!-- Financial targets -->
+  <div id="financial-targets">
+    <h2>Set Financial Targets</h2>
+    <form id="target-form">
+      <label for="target-category">Category:</label>
+      <select id="target-category" name="category" required>
+        <option value="groceries">Groceries</option>
+        <option value="entertainment">Entertainment</option>
+        <option value="dining">Dining</option>
+        <option value="bills">Bills</option>
+        <option value="transportation">Transportation</option>
+        <option value="personal">Personal</option>
+      </select>
+  
+      <label for="target-amount">Target Amount:</label>
+      <input type="number" id="target-amount" name="target-amount" required>
+      
+      <button type="submit">Set Target</button>
+    </form>
+  </div>
+
   <div id="transaction-categories">
     <h2>Transactions by Category</h2>
   </div>
