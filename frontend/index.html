@@ -44,16 +44,20 @@
 
   <!-- Button for initiate Plaid connection and getting certain data -->
   <button onclick="connectToPlaid()">Connect to Plaid sandbox data</button>
-  <button onclick="getBalance()">Get Balance Data</button>
+  <button onclick="getCombinedTransactions()">Get Combined Transactions (Plaid + Manual)</button>
   <button onclick="getTransactions()">Get Transaction Data</button>
+  <button onclick="getBalance()">Get Balance Data</button>
   <button onclick="getAccountData()">Get Account Data</button>
   <button onclick="getIdentityData()">Get Identity Data</button>
 
-  <h2>Balance Data:</h2>
-  <pre id="balance-data" style="display: none;"></pre>
-  
+  <h2>Combined Transactions:</h2>
+  <pre id="combined-transaction-data" style="display: none;"></pre>
+
   <h2>Transaction Data:</h2>
   <pre id="transaction-data" style="display: none;"></pre>
+
+  <h2>Balance Data:</h2>
+  <pre id="balance-data" style="display: none;"></pre>
   
   <h2>Account Data:</h2>
   <pre id="account-data" style="display: none;"></pre>
@@ -92,6 +96,49 @@
           linkHandler.open();
         })
         .catch(error => console.error("Error:", error));
+    }
+
+    function getCombinedTransactions() {
+      fetch("/api/transactions/all", { method: "GET" })
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to fetch transactions.");
+          return response.json();
+        })
+        .then(data => {
+          const transactions = data.transactions;
+
+          const transactionContainer = document.getElementById("combined-transaction-data");
+          while (transactionContainer.firstChild) transactionContainer.removeChild(transactionContainer.firstChild);
+
+          const transactionList = document.createElement("ul");
+          transactions.forEach(transaction => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `${transaction.date}: $${transaction.amount} (${transaction.name})`;
+            transactionList.appendChild(listItem);
+          });
+          transactionContainer.appendChild(transactionList);
+          transactionContainer.style.display = "block";
+          transactionContainer.style.background = "#F6F6F6";
+        })
+        .catch(error => console.error("Error fetching combined transactions:", error));
+    }
+
+    // Fetch transactions data
+    function getTransactions() {
+      fetch("/api/transactions/sync", { method: "POST" })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch transactions.");
+          }
+          return response.json();
+        })
+        .then(data => {
+          const pre = document.getElementById("transaction-data");
+          pre.textContent = JSON.stringify(data, null, 2);
+          pre.style.display = "block";
+          pre.style.background = "#F6F6F6";
+        })
+        .catch(error => console.error("Error fetching transactions:", error));
     }
 
     // Fetch balance data
@@ -147,25 +194,6 @@
         })
         .catch(error => console.error("Error fetching identity data:", error));
     }
-
-    // Fetch transactions data
-    function getTransactions() {
-      fetch("/api/transactions/sync", { method: "POST" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch transactions.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const pre = document.getElementById("transaction-data");
-          pre.textContent = JSON.stringify(data, null, 2);
-          pre.style.display = "block";
-          pre.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching transactions:", error));
-    }
-
   </script>
 </body>
 </html>
