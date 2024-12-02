@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <script src="auth.js"></script>
+  <script src="js/index.js"></script>
+  
     <!-- Links to other pages -->
     <nav>
       <a href="overview.html" style="margin-right: 20px;">Transaction Overview</a>
@@ -40,160 +42,21 @@
     </div>
   </div>
 
+
   <h1>Connect to Plaid's sandbox data</h1>
-
-  <!-- Button for initiate Plaid connection and getting certain data -->
   <button onclick="connectToPlaid()">Connect to Plaid sandbox data</button>
-  <button onclick="getCombinedTransactions()">Get Combined Transactions (Plaid + Manual)</button>
-  <button onclick="getTransactions()">Get Transaction Data</button>
-  <button onclick="getBalance()">Get Balance Data</button>
-  <button onclick="getAccountData()">Get Account Data</button>
-  <button onclick="getIdentityData()">Get Identity Data</button>
-
+  
   <h2>Combined Transactions:</h2>
   <pre id="combined-transaction-data" style="display: none;"></pre>
+  <button onclick="getCombinedTransactions()">Get Combined Transactions (Plaid + Manual)</button>
+
+  <h2>Select category for transaction:</h2>
+  <div id="transaction-list"></div>
+  <button onclick="loadTransactions()">Load Transactions</button>
 
   <h2>Transaction Data:</h2>
   <pre id="transaction-data" style="display: none;"></pre>
+  <button onclick="getTransactions()">Get Transaction Data</button>
 
-  <h2>Balance Data:</h2>
-  <pre id="balance-data" style="display: none;"></pre>
-  
-  <h2>Account Data:</h2>
-  <pre id="account-data" style="display: none;"></pre>
-  
-  <h2>Identity Data:</h2>
-  <pre id="identity-data" style="display: none;"></pre>
-
-  <script>
-    // Function to initialize Plaid Link and handle the process
-    function connectToPlaid() {
-      fetch('/api/create_link_token', { method: 'POST' })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to create link token.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const linkHandler = Plaid.create({
-            token: data.link_token,
-            onSuccess: function(public_token) {
-              fetch('/api/exchange_public_token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ public_token })
-              })
-                .then(exchangeResponse => exchangeResponse.json())
-                .catch(error => console.error("Error exchanging public token:", error));
-            },
-            onExit: function(err, metadata) {
-              if (err) {
-                console.error("Plaid exit error:", err);
-              }
-            }
-          });
-          linkHandler.open();
-        })
-        .catch(error => console.error("Error:", error));
-    }
-
-    function getCombinedTransactions() {
-      fetch("/api/transactions/all", { method: "GET" })
-        .then(response => {
-          if (!response.ok) throw new Error("Failed to fetch transactions.");
-          return response.json();
-        })
-        .then(data => {
-          const transactions = data.transactions;
-
-          const transactionContainer = document.getElementById("combined-transaction-data");
-          while (transactionContainer.firstChild) transactionContainer.removeChild(transactionContainer.firstChild);
-
-          const transactionList = document.createElement("ul");
-          transactions.forEach(transaction => {
-            const listItem = document.createElement("li");
-            listItem.textContent = `${transaction.date}: $${transaction.amount} (${transaction.name})`;
-            transactionList.appendChild(listItem);
-          });
-          transactionContainer.appendChild(transactionList);
-          transactionContainer.style.display = "block";
-          transactionContainer.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching combined transactions:", error));
-    }
-
-    // Fetch transactions data
-    function getTransactions() {
-      fetch("/api/transactions/sync", { method: "POST" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch transactions.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const pre = document.getElementById("transaction-data");
-          pre.textContent = JSON.stringify(data, null, 2);
-          pre.style.display = "block";
-          pre.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching transactions:", error));
-    }
-
-    // Fetch balance data
-    function getBalance() {
-      fetch("/api/data", { method: "GET" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch balance data.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const pre = document.getElementById("balance-data");
-          pre.textContent = JSON.stringify(data, null, 2);
-          pre.style.display = "block";
-          pre.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching balance data:", error));
-    }
-
-    // Fetch account data
-    function getAccountData() {
-      fetch("/api/accounts", { method: "GET" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch account data.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const pre = document.getElementById("account-data");
-          pre.textContent = JSON.stringify(data, null, 2);
-          pre.style.display = "block";
-          pre.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching account data:", error));
-    }
-
-    // Fetch identity data
-    function getIdentityData() {
-      fetch("/api/identity", { method: "GET" })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch identity data.");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const pre = document.getElementById("identity-data");
-          pre.textContent = JSON.stringify(data, null, 2);
-          pre.style.display = "block";
-          pre.style.background = "#F6F6F6";
-        })
-        .catch(error => console.error("Error fetching identity data:", error));
-    }
-  </script>
 </body>
 </html>
