@@ -95,23 +95,6 @@ app.post("/api/exchange_public_token", (req, res) => {
     });
 });
 
-// Fetch balance information 
-app.get("/api/data", (req, res) => {
-  const access_token = req.session.access_token;
-  if (!access_token) {
-    return res.status(400).json({ error: "No access token found" });
-  }
-
-  plaidClient.accountsBalanceGet({ access_token })
-    .then(balanceResponse => {
-      res.json({ balance: balanceResponse.data });
-    })
-    .catch(error => {
-      console.error("Error fetching balance:", error);
-      res.status(500).json({ error: error.message });
-    });
-});
-
 // Fetch transactions
 app.post("/api/transactions/sync", (req, res) => {
   const access_token = req.session.access_token;
@@ -130,40 +113,6 @@ app.post("/api/transactions/sync", (req, res) => {
     })
     .catch(error => {
       console.error("Error loading transactions:", error);
-      res.status(500).json({ error: error.message });
-    });
-});
-
-// Fetch account information
-app.get("/api/accounts", (req, res) => {
-  const access_token = req.session.access_token;
-  if (!access_token) {
-    return res.status(400).json({ error: "No access token found" });
-  }
-
-  plaidClient.accountsGet({ access_token })
-    .then(response => {
-      res.json(response.data);
-    })
-    .catch(error => {
-      console.error("Error fetching account data:", error);
-      res.status(500).json({ error: error.message });
-    });
-});
-
-// Fetch identity information
-app.get("/api/identity", (req, res) => {
-  const access_token = req.session.access_token;
-  if (!access_token) {
-    return res.status(400).json({ error: "No access token found" });
-  }
-
-  plaidClient.identityGet({ access_token })
-    .then(response => {
-      res.json(response.data);
-    })
-    .catch(error => {
-      console.error("Error fetching identity data:", error);
       res.status(500).json({ error: error.message });
     });
 });
@@ -192,6 +141,36 @@ app.post('/api/transactions/create', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to create transaction' });
   }
+});
+
+app.post("/api/save_transaction", async (req, res) => {
+  const { transaction_id, category } = req.body;
+  try {
+    console.log('Updating transaction:', {
+      transaction_id,
+      category
+    });
+
+    await db.query(
+      "UPDATE transactions SET category = $1 WHERE id = $2",
+      [category, transaction_id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to save transaction." });
+  }
+});
+
+app.delete('/api/transactions/:id', (req, res) => {
+  const transactionId = req.params.id;
+
+  db.query('DELETE FROM transactions WHERE id = $1', [transactionId], (err, result) => {
+    if (err) {
+      console.error("Error deleting transaction:", err);
+      return res.status(500).json({ error: "Failed to delete transaction" });
+    }
+    res.status(200).json({ message: "Transaction deleted successfully" });
+  });
 });
 
 // Fetch all transactions
@@ -437,6 +416,15 @@ app.post('/api/financial-targets/remove', (req, res) => {
 
     res.status(200).send('Target removed successfully');
   });
+});
+
+app.get("/api/categories", async (req, res) => {
+  try {
+    const categories = await db.query("SELECT * FROM categories");
+    res.json(categories.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch categories." });
+  }
 });
 
 app.listen(port, hostname, () => {
