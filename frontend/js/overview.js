@@ -10,10 +10,8 @@ function loadTransactions() {
     })
     .then(data => {
       if (Array.isArray(data)) {
-        const transactions = data;
-        loadFinancialTargets().then(targets => {
-          displayTransactions(transactions, targets);
-        });
+        const year = new Date().getFullYear(); 
+        showAllTransactionsForYear(year);
       }
     })
     .catch(error => console.error("Error:", error));
@@ -33,9 +31,48 @@ function loadFinancialTargets() {
     });
 }
 
+function filterTransactionsByMonthAndYear(month, year) {
+  fetch('/api/transactions')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Error fetching transactions");
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (Array.isArray(data)) {
+        const filteredTransactions = data.filter(transaction => {
+          const transactionDate = new Date(transaction.date);
+          return (
+            transactionDate.getMonth() + 1 === month &&
+            transactionDate.getFullYear() === year
+          );
+        });
+        loadFinancialTargets().then(targets => {
+          displayTransactions(filteredTransactions, targets);
+        });
+      }
+    })
+    .catch(error => console.error("Error:", error));
+}
+
 function displayTransactions(transactions, targets) {
   const categories = document.getElementById("transaction-categories");
-  categories.innerHTML = '<h2>Transactions by Category</h2>';
+  categories.innerHTML = `
+    <h2>Transactions by Category</h2>
+    <button id="toggle-manage" class="toggle-manage">Manage Transactions</button>
+  `;
+
+  let manageMode = false;
+
+  const toggleManageButton = document.getElementById("toggle-manage");
+  toggleManageButton.addEventListener("click", () => {
+    manageMode = !manageMode;
+    toggleManageButton.textContent = manageMode ? "Done Managing" : "Manage Transactions";
+    document.querySelectorAll(".remove-target, .remove-transaction").forEach(button => {
+      button.style.display = manageMode ? "inline-block" : "none";
+    });
+  });
 
   const categorizedTransactions = {};
   const categorySums = {};
@@ -87,12 +124,13 @@ function displayTransactions(transactions, targets) {
     if (targetAmount > 0) {
       const budgetInfo = document.createElement("span");
       budgetInfo.className = "budget-info";
-      budgetInfo.textContent = ` Budget: $${targetAmount.toFixed(2)}`;
+      budgetInfo.textContent = ` Budget Target: $${targetAmount.toFixed(2)}`;
       categoryTitle.appendChild(budgetInfo);
 
       const removeButton = document.createElement("button");
       removeButton.textContent = "Remove Target";
       removeButton.className = "remove-target";
+      removeButton.style.display = "none";
       removeButton.addEventListener("click", () => removeTarget(mappedCategory));
       categoryTitle.appendChild(removeButton);
     }
@@ -104,10 +142,19 @@ function displayTransactions(transactions, targets) {
     transactionList.className = "transaction-list";
 
     categorizedTransactions[category].forEach(transaction => {
-      const { date, amount } = transaction;
+      const { id, date, amount } = transaction;
       const detailedCategory = transaction.personal_finance_category?.detailed || transaction.detailed_category || "Uncategorized";
+
       const listItem = document.createElement("li");
-      listItem.textContent = `${date} - $${Number(amount).toFixed(2)} - ${detailedCategory}`;
+      listItem.textContent = `${date} - ${amount} - ${detailedCategory}`;
+      
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "Remove";
+      removeButton.className = "remove-transaction";
+      removeButton.style.display = "none";
+      removeButton.addEventListener("click", () => removeTransaction(id));
+      listItem.appendChild(removeButton);
+
       transactionList.appendChild(listItem);
     });
 
@@ -117,11 +164,162 @@ function displayTransactions(transactions, targets) {
   }
 }
 
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadTransactions();
+
+  const filterButton = document.getElementById("filter-transactions");
+  filterButton.addEventListener("click", () => {
+    const month = parseInt(document.getElementById("month").value);
+    const year = parseInt(document.getElementById("year").value);
+    filterTransactionsByMonthAndYear(month, year);
+  });
+
+  const showYearlyButton = document.getElementById("show-yearly-transactions");
+  showYearlyButton.addEventListener("click", () => {
+    const year = parseInt(document.getElementById("year").value);
+    showAllTransactionsForYear(year);
+  });
+});
+
+function showAllTransactionsForYear(year) {
+  fetch('/api/transactions')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Error fetching transactions");
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (Array.isArray(data)) {
+        const transactionsByMonthAndCategory = {};
+
+        // Group transactions by month and category
+        data.forEach(transaction => {
+          const transactionDate = new Date(transaction.date);
+          if (transactionDate.getFullYear() === year) {
+            const month = transactionDate.getMonth() + 1; 
+            const category = transaction.personal_finance_category?.primary || transaction.detailed_category;
+
+            if (!category || category === "Uncategorized") {
+              return;
+            }
+
+            if (!transactionsByMonthAndCategory[month]) {
+              transactionsByMonthAndCategory[month] = {};
+            }
+            if (!transactionsByMonthAndCategory[month][category]) {
+              transactionsByMonthAndCategory[month][category] = [];
+            }
+            transactionsByMonthAndCategory[month][category].push(transaction);
+          }
+        });
+
+        loadFinancialTargets().then(targets => {
+          displayYearlyTransactions(transactionsByMonthAndCategory, targets);
+        });
+      }
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+function displayYearlyTransactions(transactionsByMonthAndCategory, targets) {
+  const categoriesContainer = document.getElementById("transaction-categories");
+  categoriesContainer.innerHTML = `
+    <h2>All Transactions for Year</h2>
+  `;
+
+  for (let month = 1; month <= 12; month++) {
+    const monthHeader = document.createElement("h3");
+    monthHeader.textContent = getMonthName(month);
+    categoriesContainer.appendChild(monthHeader);
+
+    const categorizedTransactions = transactionsByMonthAndCategory[month] || {};
+
+    for (const category in categorizedTransactions) {
+      const targetAmount = parseFloat(targets[category]) || 0;
+      const totalSpent = categorizedTransactions[category].reduce((sum, transaction) => sum + parseFloat(transaction.amount) || 0, 0);
+      const exceededBudget = targetAmount > 0 && totalSpent > targetAmount;
+
+      const categorySection = document.createElement("div");
+      categorySection.className = "category-section";
+
+      const categoryHeader = document.createElement("div");
+      categoryHeader.className = "category-header";
+
+      const categoryTitle = document.createElement("h4");
+      categoryTitle.textContent = formatCategoryName(category);
+      categoryHeader.appendChild(categoryTitle);
+
+      const spentInfo = document.createElement("div");
+      spentInfo.textContent = `Spent: $${totalSpent.toFixed(2)}`;
+      categoryTitle.appendChild(spentInfo);
+
+      if (targetAmount > 0) {
+        const budgetInfo = document.createElement("span");
+        budgetInfo.className = "budget-info";
+        budgetInfo.textContent = ` Budget Target: $${targetAmount.toFixed(2)}`;
+        categoryTitle.appendChild(budgetInfo);
+      }
+
+      categorySection.appendChild(categoryHeader);
+
+      const transactionList = document.createElement("ul");
+      transactionList.className = "transaction-list";
+
+      categorizedTransactions[category].forEach(transaction => {
+        const { id, date, amount } = transaction;
+        const detailedCategory = transaction.personal_finance_category?.detailed || transaction.detailed_category || "Uncategorized";
+
+        const listItem = document.createElement("li");
+        listItem.textContent = `${date} - $${amount} - ${detailedCategory}`;
+
+        transactionList.appendChild(listItem);
+      });
+
+      categorySection.appendChild(transactionList);
+      categoriesContainer.appendChild(categorySection);
+
+      categorySection.style.backgroundColor = exceededBudget ? "red" : "";
+    }
+  }
+}
+
+function getMonthName(month) {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  return months[month - 1];
+}
+
 function formatCategoryName(category) {
   return category
     .toLowerCase()
     .replace(/_/g, ' ')
     .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+
+function removeTransaction(transactionId) {
+  fetch(`/api/transactions/${transactionId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error removing transaction');
+      }
+      alert("Transaction removed successfully");
+
+      const month = parseInt(document.getElementById("month").value);
+      const year = parseInt(document.getElementById("year").value);
+
+      filterTransactionsByMonthAndYear(month, year);
+    })
+    .catch(error => console.error("Error:", error));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -174,7 +372,11 @@ function removeTarget(category) {
         throw new Error('Error removing financial target');
       }
       alert(`${category} target removed successfully`);
-      loadTransactions();
+
+      const month = parseInt(document.getElementById("month").value);
+      const year = parseInt(document.getElementById("year").value);
+
+      filterTransactionsByMonthAndYear(month, year);
     })
     .catch(error => console.error("Error:", error));
 }
