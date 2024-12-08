@@ -161,6 +161,11 @@ function displayTransactions(transactions, targets) {
     categorySection.appendChild(transactionList);
     categories.appendChild(categorySection);
     categorySection.style.backgroundColor = exceededBudget ? "red" : "";
+
+    // Prepare data for charts
+    const { categories, spentData, targetData } = prepareChartData(transactions, targets);
+    // Render the chart
+    renderBudgetChart(categories, spentData, targetData);
   }
 }
 
@@ -379,6 +384,69 @@ function removeTarget(category) {
       filterTransactionsByMonthAndYear(month, year);
     })
     .catch(error => console.error("Error:", error));
+}
+
+function prepareChartData(transactions, targets) {
+  const categories = [];
+  const spentData = [];
+  const targetData = [];
+
+  const categorizedTransactions = transactions.reduce((acc, transaction) => {
+    const category = transaction.personal_finance_category?.primary || transaction.primary_category || "Uncategorized";
+    acc[category] = acc[category] || 0;
+    acc[category] += parseFloat(transaction.amount) || 0;
+    return acc;
+  }, {});
+
+  for (const category in categorizedTransactions) {
+    categories.push(category);
+    spentData.push(categorizedTransactions[category]);
+    targetData.push(targets[category] || 0);
+  }
+
+  return { categories, spentData, targetData };
+}
+
+function renderBudgetChart(categories, spentData, targetData) {
+  const ctx = document.getElementById('budget-chart').getContext('2d');
+
+  // Delete existing chart if it exists
+  if (window.budgetChart) {
+    window.budgetChart.destroy();
+  }
+
+  window.budgetChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: categories,
+      datasets: [
+        {
+          label: 'Spent',
+          data: spentData,
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Budget Target',
+          data: targetData,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: 'Categories' } },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Amount ($)' },
+        },
+      },
+    },
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
