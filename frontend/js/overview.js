@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", loadTransactions);
-import Chart from 'chart.js/auto';
 
 function loadTransactions() {
   fetch('/api/transactions')
@@ -164,9 +163,9 @@ function displayTransactions(transactions, targets) {
     categorySection.style.backgroundColor = exceededBudget ? "red" : "";
 
     // Prepare data for charts
-    const { categories, spentData, targetData } = prepareChartData(transactions, targets);
+    const { categories: chartCategories, spentData, targetData } = prepareChartData(transactions, targets);
     // Render the chart
-    renderBudgetChart(categories, spentData, targetData);
+    renderBudgetChart(chartCategories, spentData, targetData);
   }
 }
 
