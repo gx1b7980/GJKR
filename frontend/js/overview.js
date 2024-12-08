@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", loadTransactions);
+import Chart from 'chart.js/auto';
 
 function loadTransactions() {
   fetch('/api/transactions')
