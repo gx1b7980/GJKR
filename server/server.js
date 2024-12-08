@@ -24,8 +24,8 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // uncomment these to debug
-// console.log(JSON.stringify(process.env, null, 2));
-// console.log(JSON.stringify(databaseConfig, null, 2));
+console.log(JSON.stringify(process.env, null, 2));
+console.log(JSON.stringify(databaseConfig, null, 2));
 
 let pool = new Pool(databaseConfig);
 pool.connect().then(() => {
