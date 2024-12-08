@@ -59,7 +59,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// Route to create a link token
+// Route to create a link token link
 app.post("/api/create_link_token", (req, res) => {
   plaidClient.linkTokenCreate({
     user: {
@@ -143,21 +143,50 @@ app.post('/api/transactions/create', async (req, res) => {
   }
 });
 
-app.post("/api/save_transaction", async (req, res) => {
-  const { transaction_id, category } = req.body;
+// Route to save Plaid transactions to database
+app.post('/api/transactions/plaid', async (req, res) => {
   try {
-    console.log('Updating transaction:', {
-      transaction_id,
-      category
-    });
+    const { transactions } = req.body; 
 
-    await db.query(
-      "UPDATE transactions SET category = $1 WHERE id = $2",
-      [category, transaction_id]
-    );
-    res.json({ success: true });
+    for (let transaction of transactions) {
+      const { date, amount, category, source = 'plaid'} = transaction;
+
+      const normalizedDate = date.slice(0, 10); 
+      const roundedAmount = Math.floor(amount * 100) / 100;
+
+      const existingTransactionResult = await db.query(
+        'SELECT * FROM transactions WHERE DATE(date) = $1 AND amount = $2 AND category = $3',
+        [normalizedDate, roundedAmount, category]
+      );
+
+      if (existingTransactionResult.rowCount > 0) {
+        continue;
+      }
+
+      const categoryResult = await db.query(
+        'SELECT primary_category, detailed_category FROM categories WHERE name = $1',
+        [category]
+      );
+
+      if (categoryResult.rowCount === 0) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+
+      const { primary_category, detailed_category } = categoryResult.rows[0];
+
+      // If the source is 'plaid', set the linked_with_plaid field to true
+      const linkedWithPlaid = source === 'plaid' ? true : false;
+
+      await db.query(
+        'INSERT INTO transactions (date, amount, category, primary_category, detailed_category, source, linked_with_plaid) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [normalizedDate, roundedAmount, category, primary_category, detailed_category, source, linkedWithPlaid]
+      );
+    }
+
+    res.status(201).json({ message: 'Plaid transactions saved successfully' });
   } catch (error) {
-    res.status(500).json({ error: "Failed to save transaction." });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to save Plaid transactions' });
   }
 });
 
@@ -351,6 +380,126 @@ app.get("/api/transactions/all", async (req, res) => {
   } catch (error) {
     console.error("Error fetching combined transactions:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to link transactions
+app.post("/api/transactions/link/:id", async (req, res) => {
+  const transactionId = req.params.id;
+  try {
+    const result = await db.query(
+      "UPDATE transactions SET linked_with_plaid = TRUE WHERE id = $1 RETURNING *",
+      [transactionId]
+    );
+    if (result.rowCount > 0) {
+      res.status(200).send("Transaction linked successfully.");
+    } else {
+      res.status(404).send("Transaction not found.");
+    }
+  } catch (error) {
+    console.error("Error linking transaction:", error);
+    res.status(500).send("Internal server error.");
+  }
+});
+
+// Route to unlink transactions
+app.post('/api/transactions/unlink/:transactionId', async (req, res) => {
+  try {
+    const { transactionId } = req.params; 
+
+    const transactionResult = await db.query(
+      'SELECT * FROM transactions WHERE id = $1',
+      [transactionId]
+    );
+
+    if (transactionResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+    const transaction = transactionResult.rows[0];
+
+    if (transaction.source === 'plaid') {
+      return res.status(400).json({ error: 'This transaction cannot be unlinked as it is linked with Plaid.' });
+    }
+
+    await db.query(
+      'UPDATE transactions SET linked_with_plaid = $1 WHERE id = $2',
+      [false, transactionId]
+    );
+
+    res.status(200).json({ message: 'Transaction successfully unlinked.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to unlink transaction.' });
+  }
+});
+
+
+app.get("/api/transactions/combined", async (req, res) => {
+  try {
+    const result = await db.query("SELECT * FROM transactions ORDER BY linked_with_plaid DESC, date DESC");
+    const linkedTransactions = result.rows.filter(t => t.linked_with_plaid);
+    const unlinkedTransactions = result.rows.filter(t => !t.linked_with_plaid);
+
+    res.status(200).json({
+      linkedTransactions,
+      unlinkedTransactions,
+    });
+  } catch (error) {
+    console.error("Error fetching combined transactions:", error);
+    res.status(500).send("Internal server error.");
+  }
+});
+
+app.post("/api/transactions/auto-link", async (req, res) => {
+  try {
+    // Fetch Plaid transactions
+    const access_token = req.session.access_token;
+    let plaidTransactions = [];
+    if (access_token) {
+      const plaidResponse = await plaidClient.transactionsGet({
+        access_token,
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+      });
+      plaidTransactions = plaidResponse.data.transactions;
+    }
+
+    // Loop through each Plaid transaction
+    for (const plaidTransaction of plaidTransactions) {
+      const { date, amount } = plaidTransaction;
+
+      const roundedPlaidAmount = Math.floor(amount * 100) / 100;
+
+      const manualTransactionsResult = await db.query(
+        "SELECT * FROM transactions WHERE DATE(date) = $1 ORDER BY date DESC", 
+        [date.slice(0, 10)]
+      );
+      const manualTransactions = manualTransactionsResult.rows;
+
+      // Compare Plaid transactions with manual ones
+      for (const manualTransaction of manualTransactions) {
+        const manualDate = manualTransaction.date.toISOString().slice(0, 10);
+        const roundedManualAmount = Math.floor(manualTransaction.amount * 100) / 100;
+
+        // Check if there's a matching transaction in the manual transactions
+        if (manualDate === date.slice(0, 10) && roundedManualAmount === roundedPlaidAmount) {
+          // Update the manual transaction to be linked with Plaid
+          await db.query(
+            "UPDATE transactions SET linked_with_plaid = TRUE WHERE id = $1",
+            [manualTransaction.id]
+          );
+        }
+      }
+    }
+
+    const updatedTransactionsResult = await db.query("SELECT * FROM transactions ORDER BY date DESC");
+    const updatedTransactions = updatedTransactionsResult.rows;
+
+    res.json({
+      transactions: updatedTransactions,
+    });
+  } catch (error) {
+    console.error("Error linking transactions:", error);
+    res.status(500).send("Internal server error.");
   }
 });
 
