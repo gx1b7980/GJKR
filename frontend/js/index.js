@@ -31,28 +31,80 @@ function connectToPlaid() {
   }
 
   function getCombinedTransactions() {
-    fetch("/api/transactions/all", { method: "GET" })
+    fetch("/api/transactions/combined", { method: "GET" })
       .then(response => {
-        if (!response.ok) throw new Error("Failed to fetch transactions.");
+        if (!response.ok) throw new Error("Failed to fetch combined transactions.");
         return response.json();
       })
       .then(data => {
-        const transactions = data.transactions;
-        const transactionContainer = document.getElementById("combined-transaction-data");
-        while (transactionContainer.firstChild) transactionContainer.removeChild(transactionContainer.firstChild);
+        const linkedContainer = document.getElementById("linked-transactions");
+        const unlinkedContainer = document.getElementById("unlinked-transactions");
   
-        const transactionList = document.createElement("ul");
-        transactions.forEach(transaction => {
-          const listItem = document.createElement("li");
-          listItem.textContent = `${transaction.date}: $${Math.floor(transaction.amount * 100) / 100} (${transaction.name})`;
-          transactionList.appendChild(listItem);
+        linkedContainer.innerHTML = "";
+        unlinkedContainer.innerHTML = "";
+  
+        // Display linked transactions
+        data.linkedTransactions.forEach(transaction => {
+          const linkedItem = document.createElement("div");
+          linkedItem.innerHTML = `
+            <p>${transaction.date}: $${transaction.amount} - ${transaction.category} - ${transaction.source}</p>
+            <button onclick="unlinkTransaction(${transaction.id})">Unlink</button>
+          `;
+          linkedContainer.appendChild(linkedItem);
         });
-        transactionContainer.appendChild(transactionList);
-        transactionContainer.style.display = "block";
-        transactionContainer.style.background = "#F6F6F6";
+  
+        // Display unlinked transactions
+        data.unlinkedTransactions.forEach(transaction => {
+          const unlinkedItem = document.createElement("div");
+          unlinkedItem.innerHTML = `
+            <p>${transaction.date}: $${transaction.amount} - ${transaction.category} - ${transaction.source}</p>
+            <button onclick="linkTransaction(${transaction.id})">Link</button>
+          `;
+          unlinkedContainer.appendChild(unlinkedItem);
+        });
       })
       .catch(error => console.error("Error fetching combined transactions:", error));
+      
+      fetch('/api/transactions/auto-link', {
+        method: 'POST',
+      })
+      .then(response => response.json())
+      .catch(error => {
+        console.error('Error linking transactions:', error);
+      });
+    }
+
+  
+  function linkTransaction(transactionId) {
+    fetch(`/api/transactions/link/${transactionId}`, {
+      method: "POST",
+    })
+      .then(response => {
+        if (response.ok) {
+          alert('Transaction linked successfully!');
+          getCombinedTransactions();
+        }
+      })
+      .catch(error => console.error("Error linking transaction:", error));
   }
+  
+  function unlinkTransaction(transactionId) {
+    fetch(`/api/transactions/unlink/${transactionId}`, {
+      method: "POST",
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+
+          alert('Transaction cannot be unlinked because it was pulled from plaid!');
+        } else {
+          alert('Transaction unlinked successfully!');
+          getCombinedTransactions();
+        }
+      })
+      .catch(error => console.error("Error unlinking transaction:", error));
+  }
+  
   
   function loadTransactions() {
     fetch("/api/transactions/sync", { method: "POST" })
@@ -105,46 +157,34 @@ function connectToPlaid() {
       .catch(error => console.error("Error fetching transactions:", error));
   }
   
-  // Updated saveTransaction function
-  function saveTransaction(transactionData) {
-    if (!transactionData.category) {
-      alert("Please select a category for the transaction.");
-      return;
-    }
-  
-    fetch("/api/transactions/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(transactionData),
+ // Save Plaid transactions
+function saveTransaction(transactionData) {
+  if (!transactionData.category) {
+    alert("Please select a category for the transaction.");
+    return;
+  }
+
+  fetch("/api/transactions/plaid", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transactions: [transactionData] }),  
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.message) {
+
+        if (data.message === 'Transaction not created because it already exists.') {
+          alert(data.message);
+        } else {
+          alert("Plaid transaction saved successfully!");
+        }
+      }
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Failed to save transaction.");
-        }
-        return response.json();
-      })
-      .then(() => {
-        alert("Transaction saved successfully!");
-      })
-      .catch(error => console.error("Error saving transaction:", error));
-  }
-  
-  
-  function getTransactions() {
-    fetch("/api/transactions/sync", { method: "POST" })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch transactions.");
-        }
-        return response.json();
-      })
-      .then(data => {
-        const pre = document.getElementById("transaction-data");
-        pre.textContent = JSON.stringify(data, null, 2);
-        pre.style.display = "block";
-        pre.style.background = "#F6F6F6";
-      })
-      .catch(error => console.error("Error fetching transactions:", error));
-  }
+    .catch(error => {
+      console.error("Error saving transaction:", error);
+      alert("Failed to save transaction.");
+    });
+}
+
   
   
