@@ -31,6 +31,8 @@ CREATE TABLE transactions (
     category VARCHAR(50) NOT NULL,
     primary_category VARCHAR(50) NOT NULL,
     detailed_category VARCHAR(50) NOT NULL,
+    linked_with_plaid BOOLEAN DEFAULT FALSE,
+    source VARCHAR(50) DEFAULT 'manual',
     FOREIGN KEY (category) REFERENCES categories (name)
 );
 
