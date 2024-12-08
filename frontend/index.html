@@ -43,20 +43,22 @@
   </div>
 
 
-  <h1>Connect to Plaid's sandbox data</h1>
-  <button onclick="connectToPlaid()">Connect to Plaid sandbox data</button>
+  <h1>Connect to Plaid</h1>
+  <button onclick="connectToPlaid()">Connect to Plaid</button>
   
-  <h2>Combined Transactions:</h2>
+  <h2>Linking Transactions:</h2>
   <pre id="combined-transaction-data" style="display: none;"></pre>
-  <button onclick="getCombinedTransactions()">Get Combined Transactions (Plaid + Manual)</button>
+  <button onclick="getCombinedTransactions()">Load Transactions for Linking</button>
+
+  <h4>Linked Transactions:</h2>
+  <div id="linked-transactions"></div>
+
+  <h4>Unlinked Transactions:</h2>
+  <div id="unlinked-transactions"></div>
 
   <h2>Select category for transaction:</h2>
   <div id="transaction-list"></div>
   <button onclick="loadTransactions()">Load Transactions</button>
-
-  <h2>Transaction Data:</h2>
-  <pre id="transaction-data" style="display: none;"></pre>
-  <button onclick="getTransactions()">Get Transaction Data</button>
 
 </body>
 </html>
