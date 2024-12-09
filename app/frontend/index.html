@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Management</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <script src="auth.js" defer></script>
+  <script src="js/index.js" defer></script>  
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <nav>
+    <div class="nav-container">
+        <div class="nav-left">
+            <a href="index.html">Home</a>
+            <a href="overview.html">Transaction Overview</a>
+            <div class="menu-container">
+                <a id="menu-toggle" href="#">Menu</a>
+                <div class="dropdown-content">
+                    <a href="#" onclick="connectToPlaid()">Connect to Plaid</a>
+                    <a href="#" onclick="getCombinedTransactions()">Load Transactions for Linking</a>
+                    <a href="#" onclick="loadTransactions()">Select Category for Transaction</a>
+                </div>
+            </div>
+    </div>
+        <div id="welcome-message">Welcome, User!</div>
+        <a id="logout-button" href="#" onclick="logout()">Logout</a>
+    </div>
+</nav>
+
+  <main>
+  </main>
+
+  <script>
+      async function checkAuthStatus() {
+          try {
+              const response = await fetch('/api/user');
+              if (!response.ok) {
+                  if (response.status === 404) {
+                      // Redirect to auth.html if not authenticated
+                      window.location.href = 'auth.html';
+                      return;
+                  }
+                  throw new Error(`Error: ${response.status} ${response.statusText}`);
+              }
+              const data = await response.json();
+              if (data.isLoggedIn) {
+                  document.getElementById('welcome-message').textContent = `Welcome to Your Dashboard, ${data.user.username}!`;
+                  document.getElementById('logout-button').style.display = 'block';
+              }
+          } catch (error) {
+              console.error('Error checking auth status:', error);
+              window.location.href = 'auth.html';
+          }
+      }
+
+      function logout() {
+          fetch('/api/logout', {
+              method: 'POST',
+          })
+              .then(() => {
+                  window.location.href = 'auth.html';
+              })
+              .catch((error) => {
+                  console.error('Error logging out:', error);
+              });
+      }
+
+      document.addEventListener('DOMContentLoaded', checkAuthStatus);
+  </script>
+    <div id="dynamic-content-section">
+        <h2 id="dynamic-content-title"></h2>
+        <div id="dynamic-content-body">
+            <!-- Table will be dynamically added here -->
+        </div>
+    </div>
+    
+
+</body>
+</html>

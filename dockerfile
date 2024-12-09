@@ -1,23 +1,39 @@
-FROM node:14
+# syntax = docker/dockerfile:1
 
-WORKDIR /app/backend
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=22.9.0
+FROM node:${NODE_VERSION}-slim as base
 
-COPY backend/package.json backend/package-lock.json ./
+LABEL fly_launch_runtime="Node.js"
 
-RUN npm install
+# Node.js app lives here
+WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV="production"
+
+
+# Throw-away build stage to reduce size of final image
+FROM base as build
+
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+
+# Install node modules
+COPY package-lock.json package.json ./
+RUN npm ci
+
+# Copy application code
 COPY . .
 
-# Environment variables (update PGHOST if using Fly.io Postgres)
-ENV PGUSER="postgres" \
-    PGPASSWORD="PASSWPRD" \
-    PGHOST="localhost" \
-    PGDATABASE="demo"
 
-# Expose port 3000
-EXPOSE 8080
+# Final stage for app image
+FROM base
 
-# RUN npm run setup
+# Copy built application
+COPY --from=build /app /app
 
-# Run the backend
-CMD ["node", "server.js"]
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+CMD [ "npm", "run", "start" ]

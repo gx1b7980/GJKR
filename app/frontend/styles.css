@@ -1,0 +1,280 @@
+/* General Reset */
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+/* Navigation Bar Container */
+.nav-container {
+  display: flex;
+  justify-content: space-between; /* Spread items across the bar */
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #0073e6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+/* Dynamic Content Section */
+/* Table Styling */
+#dynamic-content-section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+#dynamic-content-section th,
+#dynamic-content-section td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+#dynamic-content-section th {
+  background-color: #0073e6;
+  color: white;
+  font-weight: bold;
+}
+
+#dynamic-content-section tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+#dynamic-content-section tr:hover {
+  background-color: #f1f1f1;
+}
+
+#dynamic-content-section select {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+#dynamic-content-section button {
+  padding: 5px 10px;
+  font-size: 14px;
+  color: white;
+  background-color: #0073e6;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#dynamic-content-section button:hover {
+  background-color: #005bb5;
+}
+/* Left Section of Navigation */
+.nav-left {
+  display: flex;
+  gap: 20px; /* Add spacing between links */
+}
+
+/* Navigation Links and Menu Button */
+.nav-container a {
+  display: inline-block;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 25px;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+  background-color: transparent;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.nav-container a:hover {
+  background-color: #005bb5;
+}
+
+/* Center-Aligned Welcome Message */
+#welcome-message {
+  font-family: Arial, sans-serif;
+  font-size: 25px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  margin: 0 20px; /* Add spacing between menu and other items */
+}
+
+/* Menu Container */
+.menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Menu Toggle Button */
+#menu-toggle {
+  display: inline-block;
+  font-size: 25px;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+  background-color: #0073e6;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+}
+
+#menu-toggle:hover {
+  background-color: #005bb5;
+  color: white;
+}
+
+/* Dropdown Content */
+.dropdown-content {
+  display: none; /* Initially hidden */
+  position: absolute;
+  top: 100%; /* Position below the menu toggle */
+  left: 0;
+  background-color: white;
+  width: 200px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 10px 0;
+}
+
+/* Show Dropdown on Hover */
+.menu-container:hover .dropdown-content {
+  display: block; /* Show all options when hovering */
+}
+
+/* Menu Items */
+.dropdown-content a {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #0073e6;
+  padding: 10px 15px;
+  text-align: left;
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+  color: #005bb5;
+}
+
+/* Transaction Divs */
+#linked-transactions,
+#unlinked-transactions {
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin: 10px 0;
+  font-size: 14px;
+  color: #555;
+  max-height: 150px;
+  overflow-y: auto; /* Scrollable if content exceeds max height */
+}
+
+#transaction-list {
+  padding: 10px;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .nav-container {
+      flex-wrap: wrap; /* Wrap items to the next row if necessary */
+  }
+
+  #welcome-message {
+      margin: 10px 0;
+  }
+
+  .dropdown-content {
+      width: 90%; /* Ensure dropdown fits smaller screens */
+      left: 5%; /* Center dropdown in mobile view */
+  }
+}
+/* General Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+}
+
+/* Modal Content */
+.modal-content {
+  position: relative;
+  padding: 20px;
+}
+
+.modal-content h2 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #0073e6;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Modal Close Button */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #333;
+}
+
+.close:hover {
+  color: #0073e6;
+}
+
+/* Modal Options */
+.modal-option {
+  margin-bottom: 20px;
+}
+
+.modal-option a {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #0073e6;
+  padding: 10px 15px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+}
+
+.modal-option a:hover {
+  background-color: #e0e0e0;
+}
+
+.modal-option div {
+  padding: 10px;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+  max-height: 200px;
+  overflow-y: auto; /* Scrollable if content exceeds max height */
+}

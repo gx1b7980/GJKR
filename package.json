@@ -1,0 +1,24 @@
+{
+  "name": "plaid-integration-app",
+  "version": "1.0.0",
+  "description": "A full-stack application for Plaid integration with PostgreSQL and Express",
+  "scripts": {
+    "start": "node app/server.js",
+    "setup": "fly postgres connect -a budgetcalcdb < setup.sql",
+    "start:local": "env-cmd node app/server.js",
+    "setup:local": "env-cmd psql -d postgres -c 'create database budgetcalc' -f setup.sql"
+  },
+  "dependencies": {
+    "@cubejs-client/core": "^0.31.0",
+    "bcrypt": "^5.1.1",
+    "chart.js": "^4.0.0",
+    "env-cmd": "^10.1.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1",
+    "plaid": "^29.0.0"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.4.11"
+  }
+}

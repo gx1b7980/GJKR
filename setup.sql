@@ -1,14 +1,19 @@
-CREATE DATABASE demo;
-\c demo;
+\c budgetcalc
 
+-- use this to clear any existing tables to reinsert fresh data
+-- you'll need to add a DROP TABLE for every table you add
+-- we don't drop the database because that causes errors with fly
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS financial_targets;
+DROP TABLE IF EXISTS categories;
+
+-- create whatever tables you need here
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL
 );
-
-INSERT INTO users (username, password) VALUES ('test', 'test1');
-
 
 -- Transaction categories
 CREATE TABLE categories (
@@ -51,3 +56,4 @@ CREATE TABLE financial_targets (
     target_amount DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (category) REFERENCES categories (name)
 );
+\q

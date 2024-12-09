@@ -1,0 +1,309 @@
+/* General Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* Navigation Bar Container */
+.nav-container {
+    display: flex;
+    justify-content: space-between; /* Spread items across the bar */
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #0073e6;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Left Section of Navigation */
+  .nav-left {
+    display: flex;
+    gap: 20px; /* Add spacing between links */
+  }
+  
+  /* Navigation Links and Menu Button */
+  .nav-container a {
+    display: inline-block;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 25px;
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    background-color: transparent;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .nav-container a:hover {
+    background-color: #005bb5;
+  }
+  
+  /* Center-Aligned Welcome Message */
+  #welcome-message {
+    font-family: Arial, sans-serif;
+    font-size: 25px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    margin: 0 20px; /* Add spacing between menu and other items */
+  }
+  
+  /* Dropdown Menu */
+  .menu-container {
+    position: relative;
+  }
+  
+  #menu-toggle {
+    display: inline-block;
+    font-size: 25px;
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  #menu-toggle:hover {
+    background-color: #005bb5;
+  }
+  
+  /* Dropdown Content */
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%; /* Position the dropdown below the menu button */
+    left: 0;
+    background-color: white;
+    width: 250px; /* Fixed width for the dropdown */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1000;
+    overflow-y: auto; /* Enable scrolling for long menus */
+    max-height: 70vh; /* Prevent overflow beyond the viewport height */
+  }
+  
+  /* Show dropdown on hover */
+  .menu-container:hover .dropdown-content {
+    display: block;
+  }
+  
+  /* Menu Content Styling */
+  .dropdown-content h1,
+  .dropdown-content h2,
+  .dropdown-content h4 {
+    margin: 10px 0;
+    color: #0073e6;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  .dropdown-content button {
+    margin: 10px 0;
+    padding: 10px 15px;
+    width: 100%;
+    background-color: #0073e6;
+    color: white;
+    font-size: 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .dropdown-content button:hover {
+    background-color: #005bb5;
+  }
+
+/* Page Title */
+h1 {
+    text-align: center;
+    color: #333;
+    margin: 20px 0;
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+}
+
+.modal-content h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #0073e6;
+    text-align: center;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+}
+
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.modal-content button {
+    width: 100%;
+    padding: 12px;
+    background-color: #0073e6;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.modal-content button:hover {
+    background-color: #005bb5;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+}
+
+/* Financial Targets Section */
+#financial-targets {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#financial-targets h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #0073e6;
+}
+
+/* Month and Year Selection */
+#month-year-selector {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#month-year-selector h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #0073e6;
+}
+
+#month-year-selector label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+}
+
+#month-year-selector input,
+#month-year-selector select,
+#month-year-selector button {
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+#month-year-selector button {
+    background-color: #0073e6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#month-year-selector button:hover {
+    background-color: #005bb5;
+}
+
+/* Transactions and Categories */
+#transaction-categories {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#transaction-categories h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #0073e6;
+}
+
+/* Budget Visualizations */
+#budget-visualizations {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#budget-visualizations h2 {
+    color: #0073e6;
+    margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    nav {
+        flex-wrap: wrap;
+    }
+
+    nav a, 
+    nav button {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .modal-content button,
+    .modal-content input,
+    .modal-content select {
+        font-size: 14px;
+    }
+}
