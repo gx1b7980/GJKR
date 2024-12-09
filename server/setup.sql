@@ -1,12 +1,14 @@
-CREATE DATABASE projectdemo;
-\c projectdemo;
+CREATE DATABASE demo;
+\c demo;
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    balance INT DEFAULT 0
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL
 );
-INSERT INTO users (name, balance) VALUES 
-('alex', 100);
+
+INSERT INTO users (username, password) VALUES ('test', 'test1');
+
 
 -- Transaction categories
 CREATE TABLE categories (
